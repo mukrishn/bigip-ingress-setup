@@ -1,0 +1,58 @@
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  name: 50-set-selinux-for-hostpath-provisioner
+  labels:
+    machineconfiguration.openshift.io/role: {{ bigip_worker_mcp }}
+spec:
+  config:
+    ignition:
+      version: 2.2.0
+    systemd:
+      units:
+        - contents: |
+            [Unit]
+            Description=Create filesystem for hostpath provisioner
+            Before=kubelet.service
+            [Service]
+            Type=oneshot
+            RemainAfterExit=yes
+            ExecStart=/bin/bash -c "[ -d {{ bigip_hostpath_dir }}  ] || mkdir -p {{ bigip_hostpath_dir }}"
+            [Install]
+            WantedBy=multi-user.target
+          enabled: true
+          name: hostpath-provisioner-mkfs.service
+        - contents: |
+            [Unit]
+            Description=Set SELinux chcon for hostpath provisioner
+            Before=kubelet.service
+            After=hostpath-provisioner-mkfs.service
+            Requires=hostpath-provisioner-mkfs.service
+            [Service]
+            ExecStart=/usr/bin/chcon -Rt container_file_t {{ bigip_hostpath_dir }}
+            [Install]
+            WantedBy=multi-user.target
+          enabled: true
+          name: hostpath-provisioner.service
+---
+apiVersion: hostpathprovisioner.kubevirt.io/v1alpha1
+kind: HostPathProvisioner
+metadata:
+  name: hostpath-provisioner
+  namespace: openshift-cnv
+spec:
+  imagePullPolicy: IfNotPresent
+  pathConfig:
+    path: "{{ bigip_hostpath_dir }}"
+    useNamingPrefix: "false"
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: hostpath-provisioner
+  namespace: openshift-cnv
+provisioner: kubevirt.io/hostpath-provisioner
+reclaimPolicy: Delete
+volumeBindingMode: Immediate

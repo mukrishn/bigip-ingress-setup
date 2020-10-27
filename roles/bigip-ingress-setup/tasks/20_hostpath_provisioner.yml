@@ -1,0 +1,52 @@
+- name: Check if hostpath-provisioner storage class exists
+  environment:
+    KUBECONFIG: "{{ kubeconfig_file }}"
+  shell: | 
+    oc get sc hostpath-provisioner --no-headers | awk '{print $1}'
+  register: hostpath_sc
+  ignore_errors: true
+
+- name: Configure hostpath-provisioner in workers
+  block:
+    - name: Copy hostpath-provisioner yaml file
+      template:
+        src: "hostpath-prov.yaml.j2"
+        dest: "{{ bigip_tempdir.path }}/hostpath-prov.yaml"
+
+    - name: Configure hostpath-provisioner
+      environment:
+        KUBECONFIG: "{{ kubeconfig_file }}"
+      shell: |
+        oc apply -f {{ bigip_tempdir.path }}/hostpath-prov.yaml
+
+    - name: Set hostpath-provisioner as default storage class for CDI
+      environment:
+        KUBECONFIG: "{{ kubeconfig_file }}"
+      shell: |
+        oc patch CDIConfig config --type='json' -p='[{"op": "replace", "path": "/spec/scratchSpaceStorageClass", "value": "hostpath-provisioner"}]'
+
+    - name: Wait for {{ bigip_worker_mcp }} MCP to start updating
+      environment:
+        KUBECONFIG: "{{ kubeconfig_file }}"
+      shell: |
+        oc wait --for=condition=Updating --timeout=300s mcp {{ bigip_worker_mcp }}
+      register: mcp_updating
+      changed_when: "'condition met' in mcp_updating.stdout"
+      retries: 2
+      delay: 60
+      until: mcp_updating is success
+      ignore_errors: true
+
+    - name: Wait for {{ bigip_worker_mcp }} MCP to be updated
+      environment:
+        KUBECONFIG: "{{ kubeconfig_file }}"
+      shell: |
+        oc wait --for=condition=Updated --timeout=1800s mcp {{ bigip_worker_mcp }}
+      changed_when: false
+      register: worker_hpp_mcp_update
+      retries: 5
+      delay: 60
+      until: not worker_hpp_mcp_update.failed
+      when: mcp_updating is changed
+
+  when: "'Error from server (NotFound)' in hostpath_sc.stderr"

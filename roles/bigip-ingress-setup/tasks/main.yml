@@ -1,0 +1,16 @@
+---
+# tasks file for bigip-ingress-setup
+- name: Setup BIGIP mgmt VLAN in provisioner
+  include_tasks: 01_provisioner_network.yml
+
+- name: Install Openshift Virtualization and SRIOV Operators
+  include_tasks: 10_operators.yml
+
+- name: Setup hostpath Provisioner
+  include_tasks: 20_hostpath_provisioner.yml
+
+- name: Create SRIOV Node policy and networks
+  include_tasks: 30_sriov_network.yml
+
+- name: Create BIGIP Virtual machines
+  include_tasks: 40_bigip_setup.yml

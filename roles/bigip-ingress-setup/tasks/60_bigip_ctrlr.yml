@@ -1,0 +1,76 @@
+- name: Patch network operator with bridge networks
+  environment:
+    KUBECONFIG: "{{ kubeconfig_file }}"
+  shell: |
+    oc patch dns.operator/default --type='merge' -p "$(cat <<- EOF
+      spec:
+        servers:
+        - forwardPlugin:
+            upstreams:
+            - {{ bigip_dns46_vs }}
+          name: f5nat64dns
+          zones:
+          - nat64.{{ bigip_base_domain.split('apps.')[1] }}
+    EOF
+    )"
+
+- name: check if bigip-login secret exists
+  environment:
+    KUBECONFIG: "{{ kubeconfig_file }}"
+  shell: |
+    oc -n kube-system  get secret/bigip-login
+  ignore_errors: true
+  register: bigip_login_secret
+
+- name: create bigip-login secret
+  environment:
+    KUBECONFIG: "{{ kubeconfig_file }}"
+  shell: |
+    oc create secret generic bigip-login -n kube-system --from-literal=username=admin --from-literal=password={{ bigip_password }}
+  when: "'not found' in bigip_login_secret.stderr"
+
+- name: check if k8s-bigip-ctlr serviceaccount exists
+  environment:
+    KUBECONFIG: "{{ kubeconfig_file }}"
+  shell: |
+    oc -n kube-system  get serviceaccount/k8s-bigip-ctlr
+  ignore_errors: true
+  register: bigip_service_account
+
+- name: create k8s-bigip-ctlr service account
+  environment:
+    KUBECONFIG: "{{ kubeconfig_file }}"
+  shell: |
+    oc create serviceaccount k8s-bigip-ctlr -n kube-system
+  when: "'not found' in bigip_service_account.stderr"
+
+- name: check if k8s-bigip-ctlr-clusteradmin clusterrolebinding exists
+  environment:
+    KUBECONFIG: "{{ kubeconfig_file }}"
+  shell: |
+    oc get clusterrolebinding/k8s-bigip-ctlr-clusteradmin
+  ignore_errors: true
+  register: bigip_clusterrolebinding
+
+- name: create k8s-bigip-ctlr-clusteradmin clusterrolebinding
+  environment:
+    KUBECONFIG: "{{ kubeconfig_file }}"
+  shell: |
+    oc create clusterrolebinding k8s-bigip-ctlr-clusteradmin --clusterrole=cluster-admin --serviceaccount=kube-system:k8s-bigip-ctlr
+  when: "'not found' in bigip_clusterrolebinding.stderr"
+
+- name: generate CIS deployment yaml file
+  vars:
+    cis_tunnels: ['ocp-ingress-1', 'ocp-egress-2']
+  template:
+    src: "setup_cis.yaml.j2"
+    dest: "{{ bigip_tempdir.path }}/setup_cis.yaml"
+
+- name: Create CIS pods
+  environment:
+    KUBECONFIG: "{{ kubeconfig_file }}"
+  shell: |
+    oc apply -f {{ bigip_tempdir.path }}/setup_cis.yaml
+
+- name: Create a namespace and application
+  include_tasks: 65_test_cis_app.yml

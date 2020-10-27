@@ -1,0 +1,2 @@
+# OCP input credential of an exsting cluster
+kubeconfig_file: /home/kni/clusterconfigs/auth/kubeconfig

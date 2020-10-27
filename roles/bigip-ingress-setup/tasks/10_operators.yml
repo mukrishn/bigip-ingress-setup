@@ -1,0 +1,142 @@
+---
+- name: Create temp directory for BIGIP
+  tempfile:
+    state: directory
+  register: bigip_tempdir
+
+- name: Generate Namespace file
+  template:
+    dest: "{{ bigip_tempdir.path }}/namespace.yaml"
+    content: |
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: {{ bigip_namespace }}    
+
+- name: Create F5 Namespace
+  environment:
+    KUBECONFIG: "{{ kubeconfig_file }}"
+  shell: |
+    oc apply -f {{ bigip_tempdir.path }}/namespace.yaml
+
+- name: Check if Openshift Virtualization operator is installed
+  environment:
+    KUBECONFIG: "{{ kubeconfig_file }}"
+  shell: | 
+    oc get og -n openshift-cnv --no-headers | awk '{print $1}'
+  register: virt_operator
+
+- name: Install Openshift Virtualization operator
+  block: 
+    - name: Copy Openshift Virtualization operator yaml file
+      copy: 
+        src: cnv-operator.yaml
+        dest: "{{ bigip_tempdir.path }}"
+
+    - name: Install Openshift Virtualization operator
+      environment:
+        KUBECONFIG: "{{ kubeconfig_file }}"
+      shell: |
+        oc apply -f {{ bigip_tempdir.path }}/cnv-operator.yaml
+
+    - name: Pause untill Openshift Virtualization is Ready
+      pause:
+        minutes: 3
+
+    - name: Check version
+      environment:
+        KUBECONFIG: "{{ kubeconfig_file }}"
+      shell: |      
+         oc get csv -n openshift-cnv --no-headers | awk '{print $1}'
+      register: cvn_version
+
+    - name: Check status
+      environment:
+        KUBECONFIG: "{{ kubeconfig_file }}"
+      shell: |
+        oc get csv -n openshift-cnv {{ cvn_version.stdout }} --template={{'{{'}}.status.phase{{'}}'}}
+      register: cnv_status
+      retries: 3
+      delay: 60
+      until: cnv_status.stdout == "Succeeded"
+      changed_when: cnv_status.stdout == "Succeeded"      
+
+    - name: Copy Hyperconverged yaml file
+      copy: 
+        dest: "{{ bigip_tempdir.path }}/cnv-hyperconverged.yml"
+        content: |
+          apiVersion: hco.kubevirt.io/v1alpha1
+          kind: HyperConverged
+          metadata:
+            name: kubevirt-hyperconverged
+            namespace: openshift-cnv
+          spec:
+            BareMetalPlatform: true
+
+    - name: Create Hyperconverged
+      environment:
+        KUBECONFIG: "{{ kubeconfig_file }}"
+      shell: |
+        oc apply -f {{ bigip_tempdir.path }}/cnv-hyperconverged.yml
+
+    - name: Pause untill Openshift Virtualization is Ready
+      pause:
+        minutes: 3
+
+  when: "'No resources found' in virt_operator.stderr"
+
+- name: Check if SRIOV operator is installed
+  environment:
+    KUBECONFIG: "{{ kubeconfig_file }}"
+  shell: | 
+    oc get og -n openshift-sriov-network-operator --no-headers | awk '{print $1}'
+  register: sriov_operator
+
+- name: Install SRIOV operator
+  block:
+    - name: Get cluster version
+      environment:
+        KUBECONFIG: "{{ kubeconfig_file }}"
+      shell: |      
+        oc version -o yaml | grep openshiftVersion | grep -o '[0-9]*[.][0-9]*' | head -1
+      register: cluster_version
+
+    - name: Set SRIOV Operator Channel
+      set_fact: 
+        sriov_channel: "{{ cluster_version.stdout }}"  
+      when: "sriov_channel is not defined"
+
+    - name: Copy SRIOV operator yaml file
+      template: 
+        src: sriov-operator.yaml.j2
+        dest: "{{ bigip_tempdir.path }}/sriov-operator.yaml"
+
+    - name: Install SRIOV operator
+      environment:
+        KUBECONFIG: "{{ kubeconfig_file }}"
+      shell: |
+        oc apply -f {{ bigip_tempdir.path }}/sriov-operator.yaml
+
+    - name: Pause untill SRIOV operator is Ready
+      pause:
+        minutes: 2
+
+    - name: Check version
+      environment:
+        KUBECONFIG: "{{ kubeconfig_file }}"
+      shell: |      
+         oc get csv -n openshift-sriov-network-operator  --no-headers | awk '{print $1}'
+      register: sriov_version
+
+    - name: Check status
+      environment:
+        KUBECONFIG: "{{ kubeconfig_file }}"
+      shell: |
+        oc get csv -n openshift-sriov-network-operator {{ sriov_version.stdout }} --template={{'{{'}}.status.phase{{'}}'}}
+      register: sriov_status
+      retries: 3
+      delay: 60
+      until: sriov_status.stdout == "Succeeded"
+      changed_when: sriov_status.stdout == "Succeeded"    
+
+  when: "'No resources found' in sriov_operator.stderr"
