@@ -20,10 +20,10 @@
         name: bigip-ingress-setup
         tasks_from: 50_bigip_activation.yml
 
-# - name: Set up CIS
-#   hosts: localhost
-#   tasks:
-#     - name: Setup BIGIP controller
-#       include_role:
-#         name: bigip-ingress-setup
-#         tasks_from: 60_bigip_ctrlr.yml
+- name: Set up CIS
+  hosts: localhost
+  tasks:
+    - name: Setup BIGIP controller
+      include_role:
+        name: bigip-ingress-setup
+        tasks_from: 60_bigip_ctrlr.yml

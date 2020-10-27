@@ -41,7 +41,6 @@ bigip_sriov_network_ipam_gateway: "192.168.222.1"   # GW of baremetal CIDR
 bigip_vm_image_url: "docker://docker-registry.upshift.redhat.com/ocp-edge-qe/bigip:15.1.0.3-EHF"
 bigip_user: "admin"
 bigip_password: "Verizon2020"
-# bigip_base_domain: "apps.{{ cluster_domain }}"
 
 bigip_ntp_server: "192.168.223.1"
 bigip_ipv6_snat_pool: ['2620:52:0:2e31::20', '2620:52:0:2e31::30']
@@ -51,7 +50,8 @@ bigip_dns46_vs: "192.168.222.161"     # Assign an IP from baremetal CIDR
 bigip_upstream_vs: "192.168.222.162"     # Assign an IP from baremetal CIDR
 
 test_namespace: "hello-world"
-test_virtual_addr: "192.168.222.180"
+test_virtual_addr: "192.168.222.180"   # Assign an IP from baremetal CIDR
+
 #########################
 ## F5 Static Variables ##
 #########################
