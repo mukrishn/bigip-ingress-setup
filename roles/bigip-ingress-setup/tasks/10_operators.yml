@@ -5,7 +5,7 @@
   register: bigip_tempdir
 
 - name: Generate Namespace file
-  template:
+  copy:
     dest: "{{ bigip_tempdir.path }}/namespace.yaml"
     content: |
       apiVersion: v1
