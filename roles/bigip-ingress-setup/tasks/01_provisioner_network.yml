@@ -24,7 +24,6 @@
     vlanid: "{{ bigip_bridges.mgmt.vlan_id }}"
     vlandev: "{{ baremetal_slave_devices.stdout }}"
     autoconnect: yes
-    ip4_method: manual
     ip4: "{{ bigip_mgmt_network | next_nth_usable(1) }}/24"
     dns4: "{{ extcidrnet | next_nth_usable(1) }}"
     state: present
