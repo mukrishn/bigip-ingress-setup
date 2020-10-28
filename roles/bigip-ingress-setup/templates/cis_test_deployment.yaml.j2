@@ -4,7 +4,7 @@ kind: Namespace
 metadata:
   name: {{ test_namespace }}
   annotations:
-    k8s.ovn.org/hybrid-overlay-external-gw: '{{ (over_self_ips['bigip1'] | selectattr("vlan", "equalto", "ocp-egress-2") | list | selectattr("type", "equalto", "float") | list)[0].address  }}'
+    k8s.ovn.org/hybrid-overlay-external-gw: '{{ (over_self_ips['bigip1'] | selectattr("vlan", "equalto", "ocp-egress-1") | list | selectattr("type", "equalto", "float") | list)[0].address  }}'
     k8s.ovn.org/hybrid-overlay-vtep: '{{ (under_self_ips['bigip1'] | selectattr("vlan", "equalto", "int-sriov") | list | selectattr("type", "equalto", "float") | list)[-1].address }}'
 
 ---

@@ -41,7 +41,7 @@
 
     - name: Pause untill Openshift Virtualization is Ready
       pause:
-        minutes: 3
+        minutes: 5
 
     - name: Check version
       environment:
@@ -121,14 +121,14 @@
       pause:
         minutes: 2
 
-    - name: Check version
+    - name: Check SRIOV operator version
       environment:
         KUBECONFIG: "{{ kubeconfig_file }}"
       shell: |      
          oc get csv -n openshift-sriov-network-operator  --no-headers | awk '{print $1}'
       register: sriov_version
 
-    - name: Check status
+    - name: Check SRIOV operator status
       environment:
         KUBECONFIG: "{{ kubeconfig_file }}"
       shell: |

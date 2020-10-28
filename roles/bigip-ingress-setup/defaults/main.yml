@@ -90,42 +90,34 @@ vxlan_tunnel_info:
   bigip0:
     - { name: 'ocp-ingress-1', local_address: '192.168.222.150', secondary_address: '192.168.222.130', key: '4097', mtu: '1372', profile: 'ocp-flood' }   # Assign IPs from baremetal CIDR
     - { name: 'ocp-egress-1', local_address: '192.168.222.151', secondary_address: '192.168.222.131', key: '4097', mtu: '1372', profile: 'ocp-flood' }   # Assign IPs from baremetal CIDR
-    - { name: 'ocp-egress-2', local_address: '192.168.222.152', secondary_address: '192.168.222.132', key: '4097', mtu: '1372', profile: 'ocp-flood' }   # Assign IPs from baremetal CIDR
 
   bigip1:
     - { name: 'ocp-ingress-1', local_address: '192.168.222.150', secondary_address: '192.168.222.140', key: '4097', mtu: '1372', profile: 'ocp-flood' }   # Assign IPs from baremetal CIDR
     - { name: 'ocp-egress-1', local_address: '192.168.222.151', secondary_address: '192.168.222.141', key: '4097', mtu: '1372', profile: 'ocp-flood' }   # Assign IPs from baremetal CIDR
-    - { name: 'ocp-egress-2', local_address: '192.168.222.152', secondary_address: '192.168.222.142', key: '4097', mtu: '1372', profile: 'ocp-flood' }   # Assign IPs from baremetal CIDR
 
 under_self_ips:
   bigip1:
     - { type: 'self', ip: 'v4', vlan: int-sriov, address: '192.168.222.140', mask: '255.255.255.0', allow: 'all' }
     - { type: 'self', ip: 'v4', vlan: int-sriov, address: '192.168.222.141', mask: '255.255.255.0', allow: 'all' }
-    - { type: 'self', ip: 'v4', vlan: int-sriov, address: '192.168.222.142', mask: '255.255.255.0', allow: 'all' }
 
     - { type: 'float', ip: 'v4', vlan: int-sriov, address: '192.168.222.150', mask: '255.255.255.0', allow: 'all' }
     - { type: 'float', ip: 'v4', vlan: int-sriov, address: '192.168.222.151', mask: '255.255.255.0', allow: 'all' }
-    - { type: 'float', ip: 'v4', vlan: int-sriov, address: '192.168.222.152', mask: '255.255.255.0', allow: 'all' }
 
   bigip0:
     - { type: 'self', ip: 'v4', vlan: int-sriov, address: '192.168.222.130', mask: '255.255.255.0', allow: 'all' }
     - { type: 'self', ip: 'v4', vlan: int-sriov, address: '192.168.222.131', mask: '255.255.255.0', allow: 'all' }
-    - { type: 'self', ip: 'v4', vlan: int-sriov, address: '192.168.222.132', mask: '255.255.255.0', allow: 'all' }
 
 over_self_ips:
   bigip1:
     - { type: 'self', ip: 'v4', vlan: ocp-ingress-1, address: '192.168.13.102', mask: '255.255.255.252', allow: 'all' }
     - { type: 'self', ip: 'v4', vlan: ocp-egress-1, address: '192.168.14.102', mask: '255.255.255.252', allow: 'all' }
-    - { type: 'self', ip: 'v4', vlan: ocp-egress-2, address: '192.168.15.102', mask: '255.255.255.252', allow: 'all' }
 
     - { type: 'float', ip: 'v4', vlan: ocp-ingress-1, address: '192.168.13.100', mask: '255.255.255.252', allow: 'all' }
     - { type: 'float', ip: 'v4', vlan: ocp-egress-1, address: '192.168.14.100', mask: '255.255.255.252', allow: 'all' }
-    - { type: 'float', ip: 'v4', vlan: ocp-egress-2, address: '192.168.15.100', mask: '255.255.255.252', allow: 'all' }
 
   bigip0:
     - { type: 'self', ip: 'v4', vlan: ocp-ingress-1, address: '192.168.13.101', mask: '255.255.255.252', allow: 'all' }
     - { type: 'self', ip: 'v4', vlan: ocp-egress-1, address: '192.168.14.101', mask: '255.255.255.252', allow: 'all' }
-    - { type: 'self', ip: 'v4', vlan: ocp-egress-2, address: '192.168.15.101', mask: '255.255.255.252', allow: 'all' }
 
 self_ips:
   bigip0:

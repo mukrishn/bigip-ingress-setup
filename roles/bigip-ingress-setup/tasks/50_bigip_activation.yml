@@ -320,7 +320,7 @@
     enabled_vlans:
     #  - /Common/WSN_EXT_IR
     #  - /Common/int-sriov
-      - /Common/ocp-egress-2
+      - /Common/ocp-egress-1
     # snat: wsn_ir_ipv6_snatpool
     profiles:
       - fastL4

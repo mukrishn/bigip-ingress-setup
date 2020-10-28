@@ -61,7 +61,7 @@
 
 - name: generate CIS deployment yaml file
   vars:
-    cis_tunnels: ['ocp-ingress-1', 'ocp-egress-2']
+    cis_tunnels: ['ocp-ingress-1', 'ocp-egress-1']
   template:
     src: "setup_cis.yaml.j2"
     dest: "{{ bigip_tempdir.path }}/setup_cis.yaml"
