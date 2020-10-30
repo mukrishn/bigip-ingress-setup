@@ -5,7 +5,7 @@
       apiVersion: v1
       kind: Namespace
       metadata:
-        name: {{ bigip_namespace }}
+        name: "{{ bigip_namespace }}"
 
 - name: Create bridges and network
   include_tasks: 41_bigip_bridge_network.yml
