@@ -16,7 +16,7 @@
     bigip_base_domain: "{{ bigip_base_domain }}"
     groups:
       - 'bigip'
-  loop: "{{ bigip_vms|dict2items }}"
+  loop: "{{ bigip_vms | dict2items }}"
 
 - name: Generate stablcurco1_dns46.tcl 
   template:

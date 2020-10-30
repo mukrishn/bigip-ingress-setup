@@ -27,7 +27,7 @@
     search_regex: OpenSSH
     delay: 10
   connection: local
-  loop: "{{ bigip_vms|dict2items }}"
+  loop: "{{ bigip_vms | dict2items }}"
 
 - name: Wait for VMs to reboot once
   command: ping -c1 {{ item.value.mgmt_ip | ipaddr('address') }}
@@ -37,7 +37,7 @@
   delay: 3
   until: node_down.rc != 0
   changed_when: false
-  loop: "{{ bigip_vms|dict2items }}"
+  loop: "{{ bigip_vms | dict2items }}"
 
 - name: Check that login page is ready
   uri:
@@ -47,4 +47,4 @@
     status_code: ['200', '503']
   register: ui_console
   until: "'Configuration Utility' in ui_console.content"
-  loop: "{{ bigip_vms|dict2items }}"
+  loop: "{{ bigip_vms | dict2items }}"

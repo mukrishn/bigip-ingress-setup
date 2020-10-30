@@ -29,4 +29,4 @@
   until: "(dv_status.stdout|from_json).status.phase == 'Succeeded'"
   retries: 60
   delay: 5
-  loop: "{{ bigip_vms|dict2items }}"
+  loop: "{{ bigip_vms | dict2items }}"
