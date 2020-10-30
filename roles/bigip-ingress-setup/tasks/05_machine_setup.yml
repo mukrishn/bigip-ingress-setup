@@ -1,52 +1,40 @@
 ---
-- name: Available {{ bigip_worker_mcp }} nodes
-  environment:
-    KUBECONFIG: "{{ kubeconfig_file }}"
-  shell: |
-    oc get nodes -o json | jq -r '.items[] | select(.metadata.labels|keys[]=="node-role.kubernetes.io/{{ bigip_worker_mcp }}")|.metadata.labels."kubernetes.io/hostname"'
-  register: worker_nodes
+- name: Create temp directory for BIGIP
+  tempfile:
+    state: directory
+  register: bigip_tempdir
+
+- name: Create {{ bigip_worker_mcp }} MCP
+  k8s:
+    state: present
+    definition: 
+      apiVersion: machineconfiguration.openshift.io/v1
+      kind: MachineConfigPool
+      metadata:
+        name: {{ bigip_worker_mcp }}
+      spec:
+        machineConfigSelector:
+          matchExpressions:
+            - {key: machineconfiguration.openshift.io/role, operator: In, values: [worker]}
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/{{ bigip_worker_mcp }}: ""    
+  register: mcp
 
 - name: Create {{ bigip_worker_mcp }} MCP 
   block:
-    - name: Create temp directory for BIGIP
-      tempfile:
-        state: directory
-      register: bigip_tempdir
-
-    - name: Create {{ bigip_worker_mcp }} MCP yaml file
-      copy:
-        dest: "{{ bigip_tempdir.path }}/{{ bigip_worker_mcp }}-mcp.yaml"
-        content: |
-          apiVersion: machineconfiguration.openshift.io/v1
-          kind: MachineConfigPool
-          metadata:
-            name: {{ bigip_worker_mcp }}
-          spec:
-            machineConfigSelector:
-              matchExpressions:
-                - {key: machineconfiguration.openshift.io/role, operator: In, values: [worker]}
-            nodeSelector:
-              matchLabels:
-                node-role.kubernetes.io/{{ bigip_worker_mcp }}: ""
-
-    - name: Create {{ bigip_worker_mcp }} MCP
-      environment:
-        KUBECONFIG: "{{ kubeconfig_file }}"
-      shell: |
-        oc -n openshift-machine-api apply -f {{ bigip_tempdir.path }}/{{ bigip_worker_mcp }}-mcp.yaml
-
     - name: Wait for {{ bigip_worker_mcp }} MCP to be updated
       environment:
         KUBECONFIG: "{{ kubeconfig_file }}"
       shell: |
         oc wait --for=condition=Updated --timeout=60s mcp {{ bigip_worker_mcp }}
       changed_when: false
-      register: worker_lb_mcp_update
+      register: mcp_update
       retries: 18 # 3 minutes * 1 minute(timeout)
       delay: 10
-      until: not worker_lb_mcp_update.failed
+      until: not mcp_update.failed
 
-    - name: Re-label worker nodes
+    - name: Set {{ bigip_worker_mcp }} Role to nodes
       environment:
         KUBECONFIG: "{{ kubeconfig_file }}"
       shell: |
@@ -71,11 +59,11 @@
       shell: |
         oc wait --for=condition=Updated --timeout=1800s mcp {{ bigip_worker_mcp }}
       changed_when: false
-      register: worker_lb_mcp_update
+      register: mcp_update
       retries: 3 # 3 minutes * 30 minutes (timeout)
       delay: 60
-      until: not worker_lb_mcp_update.failed
+      until: not mcp_update.failed
       when: mcp_updating is changed
+
   when: 
-    - "bigip_vms.bigip0.worker_node in worker_nodes.stdout_lines"
-    - "bigip_vms.bigip1.worker_node in worker_nodes.stdout_lines"
+    - mcp is changed

@@ -4,21 +4,13 @@
     dest: "{{ bigip_tempdir.path }}/RH-IT-Root-CA.crt"
 
 - name: Create registry certificate config map
-  environment:
-    KUBECONFIG: "{{ kubeconfig_file }}"
   shell: |
     oc -n {{ bigip_namespace }} create configmap my-registry-certs --from-file {{ bigip_tempdir.path }}/RH-IT-Root-CA.crt
 
-- name: Generate datavolume yaml file
-  template:
-    src: datavolume.yaml.j2
-    dest: "{{ bigip_tempdir.path }}/datavolume.yaml"
-
-- name: Create datavolumes 
-  environment:
-    KUBECONFIG: "{{ kubeconfig_file }}"
-  shell: |
-    oc apply -f {{ bigip_tempdir.path }}/datavolume.yaml
+- name: Create Data volume
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'datavolume.yaml.j2') }}"
 
 - name: wait until datavolumes are imported
   environment:

@@ -14,29 +14,29 @@
   shell: |
     oc apply -f {{ bigip_tempdir.path }}/namespace.yaml
 
-- name: Check if Openshift Virtualization operator is installed
+- name: Check if OSV operator is installed
   environment:
     KUBECONFIG: "{{ kubeconfig_file }}"
   shell: | 
     oc get og -n openshift-cnv --no-headers | awk '{print $1}'
   register: virt_operator
 
-- name: Install Openshift Virtualization operator
+- name: Install OSV operator
   block: 
-    - name: Copy Openshift Virtualization operator yaml file
+    - name: Copy OSV operator yaml file
       copy: 
         src: cnv-operator.yaml
         dest: "{{ bigip_tempdir.path }}"
 
-    - name: Install Openshift Virtualization operator
+    - name: Install OSV operator
       environment:
         KUBECONFIG: "{{ kubeconfig_file }}"
       shell: |
         oc apply -f {{ bigip_tempdir.path }}/cnv-operator.yaml
 
-    - name: Pause untill Openshift Virtualization is Ready
-      pause:
-        minutes: 5
+    - name: Wait for 5 minutes to OSV operator be Ready
+      wait_for:
+        timeout: 300
 
     - name: Check version
       environment:
@@ -74,9 +74,9 @@
       shell: |
         oc apply -f {{ bigip_tempdir.path }}/cnv-hyperconverged.yml
 
-    - name: Pause untill Openshift Virtualization is Ready
-      pause:
-        minutes: 3
+    - name: Wait for 3 minutes to OSV operator be Ready
+      wait_for:
+        timeout: 180
 
   when: "'No resources found' in virt_operator.stderr"
 
@@ -112,9 +112,9 @@
       shell: |
         oc apply -f {{ bigip_tempdir.path }}/sriov-operator.yaml
 
-    - name: Pause untill SRIOV operator is Ready
-      pause:
-        minutes: 2
+    - name: Wait for 2 minutes to SRIOV operator be Ready
+      wait_for:
+        timeout: 120
 
     - name: Check SRIOV operator version
       environment:

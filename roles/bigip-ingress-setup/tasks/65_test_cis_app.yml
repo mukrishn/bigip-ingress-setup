@@ -1,10 +1,4 @@
-- name: Generate CIS test deployment yaml
-  template:
-    src: "cis_test_deployment.yaml.j2"
-    dest: "{{ bigip_working_dir }}/cis_test_deployment.yaml"
-
 - name: Create CIS test application
-  environment:
-    KUBECONFIG: "{{ kubeconfig_file }}"
-  shell: |
-    oc apply -f {{ bigip_tempdir.path }}/cis_test_deployment.yaml
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'cis_test_deployment.yaml.j2') }}"

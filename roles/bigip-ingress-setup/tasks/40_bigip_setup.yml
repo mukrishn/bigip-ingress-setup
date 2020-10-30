@@ -1,3 +1,12 @@
+- name: Create {{ bigip_namespace }} namespace
+  k8s:
+    state: present
+    definition: 
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: {{ bigip_namespace }}
+
 - name: Create bridges and network
   include_tasks: 41_bigip_bridge_network.yml
 

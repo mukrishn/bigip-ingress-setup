@@ -1,6 +1,4 @@
 - name: Get cluster domain
-  environment:
-    KUBECONFIG: "{{ kubeconfig_file }}"
   shell: |  
     oc get routes -n openshift-cnv --no-headers | awk '{print $2}'
   register: cluster_domain
@@ -9,16 +7,10 @@
   set_fact:
     bigip_base_domain: "{{ cluster_domain.stdout.split('openshift-cnv.')[1] }}"
 
-- name: Generate Virtual machine yaml file
-  template:
-    src: bigip-vm.yaml.j2
-    dest: "{{ bigip_tempdir.path }}/bigip-vm.yaml"
-
-- name: Create Virtual machine 
-  environment:
-    KUBECONFIG: "{{ kubeconfig_file }}"
-  shell: |
-    oc apply -f {{ bigip_tempdir.path }}/bigip-vm.yaml
+- name: Create BIGIP virtual machine
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'bigip-vm.yaml.j2') }}"
 
 - name: Wait for SSH to be ready
   wait_for:
