@@ -1,9 +1,4 @@
 ---
-- name: Create temp directory for BIGIP
-  tempfile:
-    state: directory
-  register: bigip_tempdir
-
 - name: Generate Namespace file
   copy:
     dest: "{{ bigip_tempdir.path }}/namespace.yaml"
@@ -56,7 +51,7 @@
       shell: |
         oc get csv -n openshift-cnv {{ cvn_version.stdout }} --template={{'{{'}}.status.phase{{'}}'}}
       register: cnv_status
-      retries: 3
+      retries: 3 # 3 minutes
       delay: 60
       until: cnv_status.stdout == "Succeeded"
       changed_when: cnv_status.stdout == "Succeeded"      
@@ -134,7 +129,7 @@
       shell: |
         oc get csv -n openshift-sriov-network-operator {{ sriov_version.stdout }} --template={{'{{'}}.status.phase{{'}}'}}
       register: sriov_status
-      retries: 3
+      retries: 3 # 3 minutes
       delay: 60
       until: sriov_status.stdout == "Succeeded"
       changed_when: sriov_status.stdout == "Succeeded"    

@@ -3,6 +3,9 @@
 - name: Setup BIGIP mgmt VLAN in provisioner
   include_tasks: 01_provisioner_network.yml
 
+- name: Setup Worker LB role
+  include_tasks: 05_machine_setup.yml
+
 - name: Install Openshift Virtualization and SRIOV Operators
   include_tasks: 10_operators.yml
 
